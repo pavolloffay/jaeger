@@ -18,27 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package agent
+package services
 
 import (
-	"go.uber.org/zap"
+	"fmt"
 )
 
-// Agent is a composition of all services / components
-type Agent interface {
-	// Run starts all services of the Agent
-	// Run()
-}
-
-type agent struct {
-	logger *zap.Logger
-}
-
-// New creates a new Jaeger Agent
-func New(
-	logger *zap.Logger,
-) Agent {
-	return &agent{
-		logger: logger,
-	}
+func getTracerServiceName(service string) string {
+	return fmt.Sprintf("crossdock-%s", service)
 }

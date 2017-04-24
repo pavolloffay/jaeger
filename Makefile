@@ -49,7 +49,11 @@ clean:
 
 .PHONY: test
 test: go-gen
-	$(GOTEST) $(PACKAGES) | $(COLORIZE)
+	bash -c "set -e; set -o pipefail; $(GOTEST) $(PACKAGES) | $(COLORIZE)"
+
+.PHONY: integration-test
+integration-test: go-gen
+	$(GOTEST) -tags=integration ./cmd/standalone/...
 
 .PHONY: fmt
 fmt:
@@ -83,12 +87,41 @@ build_examples:
 	go build -o ./examples/hotrod/hotrod-demo ./examples/hotrod/main.go
 
 build_ui:
-	cd jaeger-ui && npm install && npm run build
+	cd jaeger-ui && yarn install && npm run build
 	rm -rf jaeger-ui-build && mkdir jaeger-ui-build
 	cp -r jaeger-ui/build jaeger-ui-build/
 
 build-all-in-one-linux: build_ui
 	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./cmd/standalone/standalone-linux ./cmd/standalone/main.go
+
+build-agent-linux:
+	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./cmd/agent/agent-linux ./cmd/agent/main.go
+
+build-query-linux:
+	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./cmd/query/query-linux ./cmd/query/main.go
+
+build-collector-linux:
+	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./cmd/collector/collector-linux ./cmd/collector/main.go
+
+build-crossdock-linux:
+	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./crossdock/crossdock ./crossdock/main.go
+
+.PHONY: build-crossdock-bin
+build-crossdock-bin:
+	make build-crossdock-linux
+	make build-query-linux
+	make build-collector-linux
+	make build-agent-linux
+
+include crossdock/rules.mk
+
+.PHONY: build-crossdock
+build-crossdock: build-crossdock-bin
+	make crossdock
+
+.PHONY: build-crossdock-fresh
+build-crossdock-fresh: build-crossdock-bin
+	make crossdock-fresh
 
 .PHONY: cover
 cover:

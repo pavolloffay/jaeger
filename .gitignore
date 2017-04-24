@@ -14,4 +14,12 @@ Gemfile.lock
 vendor/
 jaeger-ui-build/
 examples/hotrod/hotrod*
-cmd/standalone/standalone*
+cmd/standalone/standalone-linux
+cmd/agent/agent*
+cmd/collector/collector*
+cmd/query/query*
+crossdock/crossdock
+crossdock/cmd/
+crossdock/scripts/
+run-crossdock.log
+site/

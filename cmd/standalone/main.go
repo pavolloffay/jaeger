@@ -29,13 +29,14 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	jaegerClientConfig "github.com/uber/jaeger-client-go/config"
+	"github.com/uber/jaeger-lib/metrics"
+	"github.com/uber/jaeger-lib/metrics/go-kit"
+	"github.com/uber/jaeger-lib/metrics/go-kit/expvar"
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/thrift"
 	"go.uber.org/zap"
 
-	"github.com/uber/jaeger-lib/metrics"
-	"github.com/uber/jaeger-lib/metrics/go-kit"
-	"github.com/uber/jaeger-lib/metrics/go-kit/expvar"
 	agentApp "github.com/uber/jaeger/cmd/agent/app"
 	basic "github.com/uber/jaeger/cmd/builder"
 	collector "github.com/uber/jaeger/cmd/collector/app/builder"
@@ -92,7 +93,7 @@ func startCollector(logger *zap.Logger, baseFactory metrics.Factory, memoryStore
 		basic.Options.MemoryStoreOption(memoryStore),
 	)
 	if err != nil {
-		logger.Fatal("Unabled to set up builder", zap.Error(err))
+		logger.Fatal("Unable to set up builder", zap.Error(err))
 	}
 	zipkinSpansHandler, jaegerBatchesHandler, err := spanBuilder.BuildHandlers()
 	if err != nil {
@@ -101,7 +102,7 @@ func startCollector(logger *zap.Logger, baseFactory metrics.Factory, memoryStore
 
 	ch, err := tchannel.NewChannel("jaeger-collector", &tchannel.ChannelOptions{})
 	if err != nil {
-		logger.Fatal("Unable to create new New TChannel Channel", zap.Error(err))
+		logger.Fatal("Unable to create new TChannel", zap.Error(err))
 	}
 	server := thrift.NewServer(ch)
 	server.Register(jc.NewTChanCollectorServer(jaegerBatchesHandler))
@@ -109,7 +110,7 @@ func startCollector(logger *zap.Logger, baseFactory metrics.Factory, memoryStore
 	portStr := ":" + strconv.Itoa(*collector.CollectorPort)
 	listener, err := net.Listen("tcp", portStr)
 	if err != nil {
-		logger.Fatal("Unabled to listen start listening on channel", zap.Error(err))
+		logger.Fatal("Unable to start listening on channel", zap.Error(err))
 	}
 	ch.Serve(listener)
 	logger.Info("Starting jaeger-collector TChannel server", zap.Int("port", *collector.CollectorPort))
@@ -134,11 +135,23 @@ func startQuery(logger *zap.Logger, baseFactory metrics.Factory, memoryStore *me
 	if err != nil {
 		logger.Fatal("Failed to get dependency reader", zap.Error(err))
 	}
+	tracer, closer, err := jaegerClientConfig.Configuration{
+		Sampler: &jaegerClientConfig.SamplerConfig{
+			Type:  "probabilistic",
+			Param: 0.001,
+		},
+		RPCMetrics: true,
+	}.New("jaeger-query", jaegerClientConfig.Metrics(baseFactory))
+	if err != nil {
+		logger.Fatal("Failed to initialize tracer", zap.Error(err))
+	}
+	defer closer.Close()
 	rHandler := queryApp.NewAPIHandler(
 		spanReader,
 		dependencyReader,
 		queryApp.HandlerOptions.Prefix(*query.QueryPrefix),
-		queryApp.HandlerOptions.Logger(logger))
+		queryApp.HandlerOptions.Logger(logger),
+		queryApp.HandlerOptions.Tracer(tracer))
 	sHandler := queryApp.NewStaticAssetsHandler(*query.QueryStaticAssets)
 	r := mux.NewRouter()
 	rHandler.RegisterRoutes(r)
@@ -147,6 +160,6 @@ func startQuery(logger *zap.Logger, baseFactory metrics.Factory, memoryStore *me
 	recoveryHandler := recoveryhandler.NewRecoveryHandler(logger, true)
 	logger.Info("Starting jaeger-query HTTP server", zap.Int("port", *query.QueryPort))
 	if err := http.ListenAndServe(portStr, recoveryHandler(r)); err != nil {
-		logger.Fatal("Could not launch service", zap.Error(err))
+		logger.Fatal("Could not launch jaeger-query service", zap.Error(err))
 	}
 }

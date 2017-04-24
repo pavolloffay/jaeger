@@ -1,18 +1,15 @@
+<img align="right" width="290" height="210" src="http://jaeger.readthedocs.io/en/latest/images/jaeger_vector.svg">
+
 [![ReadTheDocs][doc-img]][doc] [![GoDoc][godoc-img]][godoc] [![Build Status][ci-img]][ci] [![Coverage Status][cov-img]][cov]
 
-# Jaeger - Uber's Distributed Tracing System
+# Jaeger - a Distributed Tracing System
 
-http://uber.github.io/jaeger/
-
-## Documentation
-
-See [Jaeger Read the Docs](http://jaeger.readthedocs.io/en/latest/) for full documentation, operational details and other information.
-
-Documentation is built on [Read the Docs](readthedocs.io), and a build of the documentation can be triggered [here](https://readthedocs.org/projects/jaeger/).
+  * See [documentation](http://jaeger.readthedocs.io/en/latest/) for getting started, operational details, and other information.
+  * Read a blog post [Evolving Distributed Tracing at Uber](https://eng.uber.com/distributed-tracing/).
 
 ## Status
 
-We are in the process of moving Jaeger backend code from internal repositories to GitHub.
+Most of the code here is used in production at Uber, but the open source version is currently in **Public Beta** until the first official release.
 
 ## Contributing
 
