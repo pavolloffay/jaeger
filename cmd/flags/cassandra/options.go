@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/uber/jaeger/pkg/cassandra/config"
+	"fmt"
 )
 
 const (
@@ -66,13 +67,6 @@ type namespaceConfig struct {
 func NewOptions(primaryNamespace string, otherNamespaces ...string) *Options {
 	options := &Options{
 		primary: &namespaceConfig{
-			Configuration: config.Configuration{
-				MaxRetryAttempts:   3,
-				Keyspace:           "jaeger_v1_local",
-				ProtoVersion:       4,
-				ConnectionsPerHost: 2,
-			},
-			servers:   "127.0.0.1",
 			namespace: primaryNamespace,
 		},
 		others: make(map[string]*namespaceConfig, len(otherNamespaces)),
@@ -96,43 +90,43 @@ func (opt *Options) AddFlags(flagSet *flag.FlagSet) {
 func addFlags(flagSet *flag.FlagSet, nsConfig *namespaceConfig) {
 	flagSet.Int(
 		nsConfig.namespace+suffixConnPerHost,
-		nsConfig.ConnectionsPerHost,
+		2,
 		"The number of Cassandra connections from a single backend instance")
 	flagSet.Int(
 		nsConfig.namespace+suffixMaxRetryAttempts,
-		nsConfig.MaxRetryAttempts,
+		3,
 		"The number of attempts when reading from Cassandra")
 	flagSet.Duration(
 		nsConfig.namespace+suffixTimeout,
-		nsConfig.Timeout,
+		0,
 		"Timeout used for queries")
 	flagSet.String(
 		nsConfig.namespace+suffixServers,
-		nsConfig.servers,
+		"127.0.0.1",
 		"The comma-separated list of Cassandra servers")
 	flagSet.Int(
 		nsConfig.namespace+suffixPort,
-		nsConfig.Port,
+		0,
 		"The port for cassandra")
 	flagSet.String(
 		nsConfig.namespace+suffixKeyspace,
-		nsConfig.Keyspace,
+		"jaeger_v1_local",
 		"The Cassandra keyspace for Jaeger data")
 	flagSet.Int(
 		nsConfig.namespace+suffixProtoVer,
-		nsConfig.ProtoVersion,
+		4,
 		"The Cassandra protocol version")
 	flagSet.Duration(
 		nsConfig.namespace+suffixSocketKeepAlive,
-		nsConfig.SocketKeepAlive,
+		0,
 		"Cassandra's keepalive period to use, enabled if > 0")
 	flagSet.String(
 		nsConfig.namespace+suffixUsername,
-		nsConfig.Authenticator.Basic.Username,
+		"",
 		"Username for password authentication for Cassandra")
 	flagSet.String(
 		nsConfig.namespace+suffixPassword,
-		nsConfig.Authenticator.Basic.Password,
+		"",
 		"Password for password authentication for Cassandra")
 }
 
@@ -141,6 +135,7 @@ func (opt *Options) InitFromViper(v *viper.Viper) {
 	initFromViper(opt.primary, v)
 	for _, cfg := range opt.others {
 		initFromViper(cfg, v)
+		fmt.Println(cfg.namespace)
 	}
 }
 
