@@ -1,6 +1,8 @@
-hash: c152996d24dff5978cbfe5aa65739995f12f824e62510b5b66372c7d2e7e6f18
-updated: 2017-11-27T15:48:19.270604282-05:00
+hash: e248051bbc7465c73d6db0341c2e839800b3c8c5e7c0410f842d81d143a4f3f0
+updated: 2018-02-08T15:24:13.858430206+01:00
 imports:
+- name: github.com/AndreasBriese/bbloom
+  version: 28f7e881ca57bc00e028f9ede9f0d9104cfeef5e
 - name: github.com/apache/thrift
   version: 53dd39833a08ce33582e5ff31fa18bb4735d6731
   subpackages:
@@ -11,6 +13,8 @@ imports:
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
   subpackages:
   - quantile
+- name: github.com/cespare/xxhash
+  version: 48099fad606eafc26e3a569fad19ff510fff4df6
 - name: github.com/codahale/hdrhistogram
   version: f8ad88b59a584afeee9d334eff879b104439117b
 - name: github.com/crossdock/crossdock-go
@@ -19,9 +23,19 @@ imports:
   - assert
   - require
 - name: github.com/davecgh/go-spew
-  version: ecdeabc65495df2dec95d7c4a4c3e021903035e5
+  version: 87df7c60d5820d0f8ae11afede5aa52325c09717
   subpackages:
   - spew
+- name: github.com/dgraph-io/badger
+  version: 69611218c7078be6de16f4ea13fb256e701b6b73
+  subpackages:
+  - options
+  - protos
+  - skl
+  - table
+  - "y"
+- name: github.com/dgryski/go-farm
+  version: 2de33835d10275975374b37b2dcfd22c9020a1f5
 - name: github.com/fsnotify/fsnotify
   version: 30411dbcefb7a1da7e84f75530ad3abe4011b4f8
 - name: github.com/go-kit/kit
@@ -64,9 +78,10 @@ imports:
   - internal/murmur
   - internal/streams
 - name: github.com/golang/protobuf
-  version: 7cc19b78d562895b13596ddce7aafb59dd789318
+  version: 925541529c1fa6821df4e44ce2723319eb2be768
   subpackages:
   - proto
+  - protoc-gen-go
 - name: github.com/golang/snappy
   version: d7b1e156f50d3c4664f683603af70e3e47fa0aa2
 - name: github.com/gorilla/context
@@ -146,6 +161,14 @@ imports:
   version: a1dba9ce8baed984a2495b658c82687f8157b98f
   subpackages:
   - xfs
+- name: github.com/prometheus/tsdb
+  version: ffe73cd0a69a1d54aa17a47404d4a98f6fcdf32b
+  subpackages:
+  - chunkenc
+  - chunks
+  - fileutil
+  - index
+  - labels
 - name: github.com/PuerkitoBio/purell
   version: fd18e053af8a4ff11039269006e8037ff374ce0e
 - name: github.com/PuerkitoBio/urlesc
@@ -165,9 +188,9 @@ imports:
 - name: github.com/spf13/viper
   version: 25b30aa063fc18e48662b86996252eabdcf2f0c7
 - name: github.com/stretchr/objx
-  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
+  version: 8a3f7159479fbc75b30357fbc48f380b7320f08e
 - name: github.com/stretchr/testify
-  version: 2aa2c176b9dab406a6970f6a55f513e8a8c8b18f
+  version: be8372ae8ec5c6daaed3cc28ebf73c54b737c240
   subpackages:
   - assert
   - mock
@@ -175,7 +198,7 @@ imports:
 - name: github.com/uber-go/atomic
   version: 8474b86a5a6f79c443ce4b2992817ff32cf208b8
 - name: github.com/uber/jaeger-client-go
-  version: ff3efa227b65e419701a4f48985379ca106a89e7
+  version: 3ac96c6e679cb60a74589b0d0aa7c70a906183f7
   subpackages:
   - config
   - internal/baggage
@@ -192,7 +215,7 @@ imports:
   - transport/zipkin
   - utils
 - name: github.com/uber/jaeger-lib
-  version: c48167d9cae5887393dd5e61efd06a4a48b7fbb3
+  version: 7f95f4f7e80028096410abddaae2556e4c61b59f
   subpackages:
   - metrics
   - metrics/go-kit
@@ -228,11 +251,13 @@ imports:
   - zapcore
   - zaptest
 - name: golang.org/x/net
-  version: a337091b0525af65de94df2eb7e98bd9962dcbe2
+  version: f5dfe339be1d06f81b22525fe34671ee7d2c8904
   subpackages:
   - context
   - context/ctxhttp
   - idna
+  - internal/timeseries
+  - trace
 - name: golang.org/x/sys
   version: d4feaf1a7e61e1d9e79e6c4e76c6349e9cab0a03
   subpackages:
@@ -257,7 +282,7 @@ imports:
   subpackages:
   - uritemplates
 - name: gopkg.in/yaml.v2
-  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
+  version: d670f9405373e636a5a2765eea47fac0c9bc91a4
 testImports:
 - name: github.com/kr/text
   version: 7cafcd837844e784b526369c9bce262804aebc60
