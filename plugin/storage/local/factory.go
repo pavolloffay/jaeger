@@ -21,7 +21,7 @@ func (f *Factory) Initialize(metricsFactory metrics.Factory, logger *zap.Logger)
 }
 
 func (f *Factory) CreateSpanReader() (spanstore.Reader, error) {
-	return nil, nil
+	return f.storage, nil
 }
 
 func (f *Factory) CreateSpanWriter() (spanstore.Writer, error) {

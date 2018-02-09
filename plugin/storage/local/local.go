@@ -2,7 +2,8 @@ package local
 
 import (
 	"encoding/json"
-	"strconv"
+	"fmt"
+	"bytes"
 
 	"github.com/prometheus/tsdb/index"
 	"github.com/prometheus/tsdb/labels"
@@ -10,15 +11,13 @@ import (
 
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
-	"time"
-	"math/rand"
-	"fmt"
 )
 
 const (
-	traceIdLabel = "traceid"
-	serviceNameLabel = "serviceName"
-	operationNamelabel = "operationName"
+	defaultNumTraces = 100
+	traceIdLabel       = "traceid"
+	serviceNameLabel   = "serviceName"
+	operationNameLabel = "operationName"
 
 	servicesDBKey = "services"
 	operationsDBKey = "operations"
@@ -27,15 +26,21 @@ const (
 type Storage struct {
 	db *badger.DB
 	mp *index.MemPostings
+	options StorageOptions
+}
+
+type StorageOptions struct{
+	Directory string
+}
+
+func NewStorage(options StorageOptions) *Storage {
+	return &Storage{options:options}
 }
 
 func (s *Storage) Start() error {
-	fmt.Printf("aaaarrr")
 	opts := badger.DefaultOptions
-	dir := fmt.Sprintf("/tmp/%d", rand.NewSource(time.Now().UnixNano()).Int63())
-	fmt.Printf("Creating storage %s\n", dir)
-	opts.Dir = dir
-	opts.ValueDir = dir
+	opts.Dir = s.options.Directory
+	opts.ValueDir = s.options.Directory
 	db, err := badger.Open(opts)
 	if err != nil {
 		return err
@@ -61,31 +66,28 @@ func (s *Storage) WriteSpan(span *model.Span) error {
 		if err != nil {
 			return err
 		}
-		err = addValToList(txn, serviceOperationDBKey(span.Process.ServiceName), span.OperationName)
+		err = addValToList(txn, serviceOperationKey(span.Process.ServiceName), span.OperationName)
 		if err != nil {
 			return err
 		}
 
-		lset := tagsToLabels(span.Tags)
-		traceIdLabel := labels.Label{Name: traceIdLabel, Value: span.TraceID.String()}
-		// k:v -> traceid1, traceid2
-		s.mp.Add(uint64(span.TraceID.High), append(lset, traceIdLabel))
-		// "trace":traceId -> spanid1, spanid2
-		// "serviceName":s -> spanid
-		// "operationName":op -> spanid
-		s.mp.Add(uint64(span.SpanID), []labels.Label{
-			traceIdLabel,
-			{Name:serviceNameLabel, Value:span.Process.ServiceName},
-			{Name:operationNamelabel, Value:span.OperationName},
+		lset := labels.New(labels.Label{
+			Name:serviceNameLabel, Value:span.Process.ServiceName},
+			labels.Label{Name: operationNameLabel, Value:span.OperationName,
 		})
-		// services
-		// TODO probably move to a different place?
-		s.mp.EnsureOrder()
+		lset = append(lset, tagsToLabels(span.Tags)...)
+		// "serviceName":s -> traceid1
+		// "operationName":op -> traceid1
+		// tag1:val1 -> traceid1
+		// TODO now writing only Low id
+		s.mp.Add(uint64(span.TraceID.Low), lset)
+		// "traceId":traceid1 -> spanid
+		s.mp.Add(uint64(span.SpanID), []labels.Label{{Name: traceIdLabel, Value: span.TraceID.String()}})
 		return nil
 	})
 }
 
-func addValToList(txn *badger.Txn, key string, val string) error {
+func addValToList(txn *badger.Txn, key string, value string) error {
 	item, err := txn.Get([]byte(key))
 	if err != nil && err != badger.ErrKeyNotFound {
 		return err
@@ -96,12 +98,16 @@ func addValToList(txn *badger.Txn, key string, val string) error {
 		if err != nil {
 			return err
 		}
+		// do not add if it is already there
+		if bytes.Contains(val, []byte(value)) {
+			return nil
+		}
 		err = json.Unmarshal(val, &services)
 		if err != nil {
 			return err
 		}
 	}
-	json, err := json.Marshal(append(services, val))
+	json, err := json.Marshal(append(services, value))
 	if err != nil {
 		return err
 	}
@@ -126,10 +132,10 @@ func (s *Storage) GetServices() ([]string, error) {
 }
 
 func (s *Storage) GetOperations(service string) ([]string, error) {
-	return s.getList(serviceOperationDBKey(service))
+	return s.getList(serviceOperationKey(service))
 }
 
-func serviceOperationDBKey(service string) string {
+func serviceOperationKey(service string) string {
 	return fmt.Sprintf("%s:%s", service, operationsDBKey)
 }
 
@@ -160,22 +166,20 @@ func (s *Storage) getList(key string) ([]string, error) {
 	return vals, nil
 }
 
-
 func idToString(id uint64) string {
-	// TODO really strconv?
-	return strconv.FormatUint(id, 10)
+	return fmt.Sprintf("%x", id)
 }
 
 func (s *Storage) GetTrace(traceID model.TraceID) (*model.Trace, error) {
-	p := s.mp.Get(traceIdLabel, traceID.String())
-	return s.getTrace(p)
+	return s.getTrace(traceID.String())
 }
 
-func (s *Storage) getTrace(p index.Postings) (*model.Trace, error) {
+func (s *Storage) getTrace(id string) (*model.Trace, error) {
+	ids := s.getFromIndex(traceIdLabel, id)
 	t := &model.Trace{}
 	s.db.View(func(txn *badger.Txn) error {
-		for p.Next() {
-			item, err := txn.Get([]byte(idToString(p.At())))
+		for i := range ids {
+			item, err := txn.Get([]byte(idToString(i)))
 			if err  != nil {
 				return err
 			}
@@ -196,26 +200,67 @@ func (s *Storage) getTrace(p index.Postings) (*model.Trace, error) {
 }
 
 func (s *Storage) FindTraces(q *spanstore.TraceQueryParameters) ([]*model.Trace, error) {
-	var tIds []uint64
-	for k, v := range q.Tags {
-		p := s.mp.Get(k, v)
-		id := p.At()
-		tIds = append(tIds, id)
-		for p.Next() {
-			// TODO now doing union
-			tIds = append(tIds, p.At())
+	if q.NumTraces == 0 {
+		q.NumTraces = defaultNumTraces
+	}
+
+	// service
+	ids := s.getFromIndex(serviceNameLabel, q.ServiceName)
+	// operation
+	if q.OperationName != "" {
+		ids = intersection(ids, s.getFromIndex(operationNameLabel, q.OperationName))
+	}
+	// tags
+	if q.Tags != nil || len(q.Tags) > 0 {
+		for k, v := range q.Tags {
+			var tids = s.getFromIndex(k ,v)
+			ids = intersection(ids, tids)
 		}
 	}
 
-	var traces []*model.Trace
-	for _, id := range tIds {
+	// TODO duration, time range
+	// duration could be indexed in buckets
+	//q.DurationMax
+	//q.DurationMin
+	//q.StartTimeMax
+	//q.StartTimeMin
+
+	traces := make([]*model.Trace, 0, q.NumTraces)
+	for id := range ids {
 		// get spanids of the trace
-		p := s.mp.Get("traceid", idToString(id))
-		t, err := s.getTrace(p)
+		t, err := s.getTrace(idToString(id))
 		if err != nil {
 			return nil, err
 		}
 		traces = append(traces, t)
+		if len(traces) == q.NumTraces {
+			break
+		}
 	}
 	return traces, nil
+}
+
+func (s *Storage) getFromIndex(key string, value string) map[uint64]bool {
+	s.mp.EnsureOrder()
+	var ids = map[uint64]bool{}
+	postings := s.mp.Get(key, value)
+	for postings.Next() {
+		tId := postings.At()
+		ids[tId] = true
+	}
+	return ids
+}
+
+func intersection(a map[uint64]bool, b map[uint64]bool) map[uint64]bool {
+	var res = map[uint64]bool{}
+	for k := range a {
+		if b[k] {
+			res[k] = true
+		}
+	}
+	return res
+}
+
+func (s *Storage) Close() error {
+	return s.db.Close()
 }
