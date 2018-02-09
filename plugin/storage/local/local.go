@@ -175,11 +175,11 @@ func (s *Storage) GetTrace(traceID model.TraceID) (*model.Trace, error) {
 }
 
 func (s *Storage) getTrace(id string) (*model.Trace, error) {
-	ids := s.getFromIndex(traceIdLabel, id)
+	postings := s.getFromIndex(traceIdLabel, id)
 	t := &model.Trace{}
 	s.db.View(func(txn *badger.Txn) error {
-		for i := range ids {
-			item, err := txn.Get([]byte(idToString(i)))
+		for postings.Next() {
+			item, err := txn.Get([]byte(idToString(postings.At())))
 			if err  != nil {
 				return err
 			}
@@ -208,13 +208,13 @@ func (s *Storage) FindTraces(q *spanstore.TraceQueryParameters) ([]*model.Trace,
 	ids := s.getFromIndex(serviceNameLabel, q.ServiceName)
 	// operation
 	if q.OperationName != "" {
-		ids = intersection(ids, s.getFromIndex(operationNameLabel, q.OperationName))
+		ids = index.Intersect(ids, s.getFromIndex(operationNameLabel, q.OperationName))
 	}
 	// tags
 	if q.Tags != nil || len(q.Tags) > 0 {
 		for k, v := range q.Tags {
 			var tids = s.getFromIndex(k ,v)
-			ids = intersection(ids, tids)
+			ids = index.Intersect(ids, tids)
 		}
 	}
 
@@ -226,9 +226,9 @@ func (s *Storage) FindTraces(q *spanstore.TraceQueryParameters) ([]*model.Trace,
 	//q.StartTimeMin
 
 	traces := make([]*model.Trace, 0, q.NumTraces)
-	for id := range ids {
+	for ids.Next() {
 		// get spanids of the trace
-		t, err := s.getTrace(idToString(id))
+		t, err := s.getTrace(idToString(ids.At()))
 		if err != nil {
 			return nil, err
 		}
@@ -240,25 +240,9 @@ func (s *Storage) FindTraces(q *spanstore.TraceQueryParameters) ([]*model.Trace,
 	return traces, nil
 }
 
-func (s *Storage) getFromIndex(key string, value string) map[uint64]bool {
+func (s *Storage) getFromIndex(key string, value string) index.Postings {
 	s.mp.EnsureOrder()
-	var ids = map[uint64]bool{}
-	postings := s.mp.Get(key, value)
-	for postings.Next() {
-		tId := postings.At()
-		ids[tId] = true
-	}
-	return ids
-}
-
-func intersection(a map[uint64]bool, b map[uint64]bool) map[uint64]bool {
-	var res = map[uint64]bool{}
-	for k := range a {
-		if b[k] {
-			res[k] = true
-		}
-	}
-	return res
+	return s.mp.Get(key, value)
 }
 
 func (s *Storage) Close() error {
