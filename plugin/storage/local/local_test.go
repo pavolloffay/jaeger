@@ -14,13 +14,15 @@ import (
 	"github.com/jaegertracing/jaeger/storage/spanstore"
 )
 
+
 func withStorage(t *testing.T,fce func(s *Storage))  {
 	dir := fmt.Sprintf("/tmp/%d", rand.NewSource(time.Now().UnixNano()).Int63())
 	storage := NewStorage(StorageOptions{Directory:dir})
 	storage.Start()
 	fce(storage)
-	storage.Close()
-	err := os.RemoveAll(dir)
+	err := storage.Close()
+	require.NoError(t, err)
+	err = os.RemoveAll(dir)
 	require.NoError(t, err)
 }
 
