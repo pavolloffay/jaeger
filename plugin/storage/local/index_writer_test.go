@@ -11,6 +11,8 @@ import (
 	"github.com/prometheus/tsdb/labels"
 	"github.com/prometheus/tsdb/chunks"
 	"os"
+	"github.com/prometheus/tsdb"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func TestIndex(t *testing.T) {
@@ -40,6 +42,7 @@ func TestIndex(t *testing.T) {
 	require.NoError(t, err)
 	writer.AddSymbols(map[string]struct{}{"re":{}, "ka":{}})
 	err = writer.AddSeries(15, labels.FromMap(map[string]string{"re":"ka"}), chunks.Meta{Ref:15})
+
 	require.NoError(t, err)
 	mp = index.NewMemPostings()
 	mp.Add(15, labels.New(labels.Label{Name:"re", Value:"ka"}))
@@ -53,6 +56,8 @@ func TestIndex(t *testing.T) {
 		return nil
 	})
 }
+
+
 
 func TestAdd(t *testing.T) {
 	indexDir := "/tmp/index2"
@@ -71,6 +76,7 @@ func TestAdd(t *testing.T) {
 	require.NoError(t, err)
 
 	reader, err := index.NewFileReader(indexDir, 2)
+
 	require.NoError(t, err)
 	pos, err := reader.Postings("re", "ka")
 	fmt.Println(pos.Next())
@@ -108,3 +114,38 @@ func TestAdd(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestWriteRead(t *testing.T) {
+	indexDir := "/tmp/index3"
+	defer os.RemoveAll(indexDir)
+
+	postings := index.NewMemPostings()
+	postings.Add(1, labels.New(labels.Label{Name:"l1", Value:"v1"}))
+	postings.Add(1, labels.New(labels.Label{Name:"l2", Value:"v2"}))
+	postings.Add(2, labels.New(labels.Label{Name:"l3", Value:"v3"}))
+
+	writer, err := index.NewWriter(indexDir)
+	require.NoError(t, err)
+
+	symbols := map[string]struct{}{}
+
+	err = postings.Iter(func(label labels.Label, postings index.Postings) error {
+		symbols[label.Name] = struct{}{}
+		symbols[label.Value] = struct{}{}
+		fmt.Println(label)
+		return writer.WritePostings(label.Name, label.Value, postings)
+	})
+	require.NoError(t, err)
+
+
+	block := tsdb.Block{}
+	head := tsdb.NewHead(prometheus.Registerer())
+	head.Appender().Commit()
+	i := head.Index()
+	p := i.Postings("re", "re")
+	h := tsdb.Head{}
+	tsdb.Open()
+
+
+	err = writer.Close()
+	require.NoError(t, err)
+}

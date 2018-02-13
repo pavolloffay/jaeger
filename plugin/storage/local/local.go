@@ -47,6 +47,7 @@ func (s *Storage) Start() error {
 	}
 	s.mp = index.NewMemPostings()
 	s.db = db
+
 	return nil
 }
 
