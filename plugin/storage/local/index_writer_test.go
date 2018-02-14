@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/tsdb/chunks"
 	"os"
 	"github.com/prometheus/tsdb"
-	"github.com/prometheus/client_golang/prometheus"
+	"io/ioutil"
 )
 
 func TestIndex(t *testing.T) {
@@ -56,8 +56,6 @@ func TestIndex(t *testing.T) {
 		return nil
 	})
 }
-
-
 
 func TestAdd(t *testing.T) {
 	indexDir := "/tmp/index2"
@@ -136,16 +134,30 @@ func TestWriteRead(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-
-	block := tsdb.Block{}
-	head := tsdb.NewHead(prometheus.Registerer())
-	head.Appender().Commit()
-	i := head.Index()
-	p := i.Postings("re", "re")
-	h := tsdb.Head{}
-	tsdb.Open()
-
-
 	err = writer.Close()
 	require.NoError(t, err)
+}
+
+func TestOpenDB(t *testing.T) {
+	dir, err := ioutil.TempDir("", "test")
+	defer os.RemoveAll(dir)
+	//opts := &tsdb.Options{}
+	db, err := tsdb.Open(dir, nil, nil, tsdb.DefaultOptions)
+	require.NoError(t, err)
+	assert.NotNil(t, db)
+	appender := db.Appender()
+	id, err := appender.Add(labels.New(labels.Label{Name:"name", Value:"value"}), 4, 33)
+	err = appender.Commit()
+	require.NoError(t, err)
+	fmt.Println(id)
+	q, err := db.Querier(0, 4)
+	require.NoError(t, err)
+	ss, err := q.Select(labels.NewEqualMatcher("name", "value"))
+	require.NoError(t, err)
+	fmt.Println(ss)
+	fmt.Println(ss.Next())
+	it := ss.At().Iterator()
+	it.Next()
+	fmt.Println(it.At())
+
 }
