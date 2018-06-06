@@ -80,6 +80,9 @@ func (td toDomain) spanToDomain(dbSpan *json.Span) (*model.Span, error) {
 }
 
 func (td toDomain) convertRefs(refs []json.Reference) ([]model.SpanRef, error) {
+	if len(refs) == 0 {
+		return nil, nil
+	}
 	retMe := make([]model.SpanRef, len(refs))
 	for i, r := range refs {
 		// There are some inconsistencies with ReferenceTypes, hence the hacky fix.
@@ -112,6 +115,9 @@ func (td toDomain) convertRefs(refs []json.Reference) ([]model.SpanRef, error) {
 }
 
 func (td toDomain) convertKeyValues(tags []json.KeyValue) ([]model.KeyValue, error) {
+	if len(tags) == 0 {
+		return nil, nil
+	}
 	retMe := make([]model.KeyValue, len(tags))
 	for i := range tags {
 		kv, err := td.convertKeyValue(&tags[i])
@@ -165,11 +171,21 @@ func (td toDomain) convertKeyValueOfType(tag *json.KeyValue, vType model.ValueTy
 }
 
 func (td toDomain) convertLogs(logs []json.Log) ([]model.Log, error) {
+	if len(logs) == 0 {
+		return nil, nil
+	}
 	retMe := make([]model.Log, len(logs))
 	for i, l := range logs {
-		fields, err := td.convertKeyValues(l.Fields)
-		if err != nil {
-			return nil, err
+
+		var fields []model.KeyValue
+		// exception these tags should be also nil
+		if len(l.Fields) == 0 {
+			fields = make([]model.KeyValue, 0)
+		} else {
+			var err error
+			if fields, err = td.convertKeyValues(l.Fields); err != nil {
+				return nil, err
+			}
 		}
 		retMe[i] = model.Log{
 			Timestamp: model.EpochMicrosecondsAsTime(l.Timestamp),
