@@ -129,9 +129,19 @@ func (s *SpanWriter) WriteSpan(span *model.Span) error {
 	if err := s.createIndex(spanIndexName, spanMapping, jsonSpan); err != nil {
 		return err
 	}
+	jsonSpan.TagsArr = tagsArr(jsonSpan.Tags)
 	s.writeSpan(spanIndexName, jsonSpan)
 	return nil
 }
+
+func tagsArr(jspan []jModel.KeyValue) []string {
+	var arr []string
+	for _, kv := range jspan {
+		arr = append(arr, kv.Key + "=" + fmt.Sprintf("%v", kv.Value))
+	}
+	return arr
+}
+
 
 // Close closes SpanWriter
 func (s *SpanWriter) Close() error {

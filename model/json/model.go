@@ -69,6 +69,7 @@ type Span struct {
 	References    []Reference `json:"references"`
 	StartTime     uint64      `json:"startTime"` // microseconds since Unix epoch
 	Duration      uint64      `json:"duration"`  // microseconds
+	TagsArr []string `json:"tagsArr"`
 	Tags          []KeyValue  `json:"tags"`
 	Logs          []Log       `json:"logs"`
 	ProcessID     ProcessID   `json:"processID,omitempty"`
