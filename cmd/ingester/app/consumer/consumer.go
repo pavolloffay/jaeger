@@ -66,16 +66,13 @@ func (c *Consumer) Start() {
 	go func() {
 		c.logger.Info("Starting main loop")
 		for pc := range c.internalConsumer.Partitions() {
-			val, ok := c.partitionIDToState.Load(pc.Partition())
-			if ok {
+			cs := getConsumerState(pc.Partition(), c.partitionIDToState)
+			if cs != nil {
 				// This is a guard against simultaneously draining messages
 				// from the last time the partition was assigned and
 				// processing new messages for the same partition, which may lead
 				// to the cleanup process not completing
-				vv, ok := val.(*consumerState)
-				if ok {
-					vv.wg.Wait()
-				}
+				cs.wg.Wait()
 			}
 			c.partitionIDToState.Store(pc.Partition(), &consumerState{partitionConsumer: pc})
 			go c.handleMessages(pc)
@@ -84,12 +81,21 @@ func (c *Consumer) Start() {
 	}()
 }
 
+func getConsumerState(k int32, m sync.Map) *consumerState {
+	v, ok := m.Load(k)
+	if !ok {
+		return nil
+	}
+	vv, _ := v.(*consumerState)
+	return vv
+}
+
 // Close closes the Consumer and underlying sarama consumer
 func (c *Consumer) Close() error {
 	c.partitionIDToState.Range(func(key, value interface{}) bool {
-		vv, _:= value.(*consumerState)
-		c.closePartition(vv.partitionConsumer)
-		vv.wg.Wait()
+		cs, _ := value.(*consumerState)
+		c.closePartition(cs.partitionConsumer)
+		cs.wg.Wait()
 		return true
 	})
 	c.logger.Info("Closing parent consumer")
@@ -98,13 +104,11 @@ func (c *Consumer) Close() error {
 
 func (c *Consumer) handleMessages(pc sc.PartitionConsumer) {
 	c.logger.Info("Starting message handler", zap.Int32("partition", pc.Partition()))
-	val, ok := c.partitionIDToState.Load(pc.Partition())
-	if !ok {
-		return
+	cs := getConsumerState(pc.Partition(), c.partitionIDToState)
+	if cs != nil {
+		cs.wg.Add(1)
+		defer cs.wg.Done()
 	}
-	vv, _  := val.(*consumerState)
-	vv.wg.Add(1)
-	defer vv.wg.Done()
 	defer c.closePartition(pc)
 
 	msgMetrics := c.newMsgMetrics(pc.Partition())
@@ -134,13 +138,12 @@ func (c *Consumer) closePartition(partitionConsumer sc.PartitionConsumer) {
 
 func (c *Consumer) handleErrors(partition int32, errChan <-chan *sarama.ConsumerError) {
 	c.logger.Info("Starting error handler", zap.Int32("partition", partition))
-	val, ok := c.partitionIDToState.Load(partition)
-	if !ok {
+	cs := getConsumerState(partition, c.partitionIDToState)
+	if cs == nil {
 		return
 	}
-	vv, _ := val.(*consumerState)
-	vv.wg.Add(1)
-	defer vv.wg.Done()
+	cs.wg.Add(1)
+	defer cs.wg.Done()
 
 	errMetrics := c.newErrMetrics(partition)
 	for err := range errChan {

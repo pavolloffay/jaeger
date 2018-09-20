@@ -137,11 +137,10 @@ func TestSaramaConsumerWrapper_start_Messages(t *testing.T) {
 	undertest := newConsumer(localFactory, topic, mp, newSaramaClusterConsumer(saramaPartitionConsumer))
 
 	m := sync.Map{}
-	m.Store(partition,  &partitionConsumerWrapper{
+	m.Store(partition, &partitionConsumerWrapper{
 		topic:             topic,
 		partition:         partition,
 		PartitionConsumer: &kmocks.PartitionConsumer{},
-
 	})
 	undertest.partitionIDToState = m
 
