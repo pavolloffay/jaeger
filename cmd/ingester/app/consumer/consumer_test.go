@@ -93,7 +93,7 @@ func newConsumer(
 		metricsFactory:     factory,
 		logger:             logger,
 		internalConsumer:   consumer,
-		partitionIDToState: make(map[int32]*consumerState),
+		partitionIDToState: sync.Map{},
 
 		processorFactory: ProcessorFactory{
 			topic:          topic,
@@ -136,15 +136,14 @@ func TestSaramaConsumerWrapper_start_Messages(t *testing.T) {
 
 	undertest := newConsumer(localFactory, topic, mp, newSaramaClusterConsumer(saramaPartitionConsumer))
 
-	undertest.partitionIDToState = map[int32]*consumerState{
-		partition: {
-			partitionConsumer: &partitionConsumerWrapper{
-				topic:             topic,
-				partition:         partition,
-				PartitionConsumer: &kmocks.PartitionConsumer{},
-			},
-		},
-	}
+	m := sync.Map{}
+	m.Store(partition,  &partitionConsumerWrapper{
+		topic:             topic,
+		partition:         partition,
+		PartitionConsumer: &kmocks.PartitionConsumer{},
+
+	})
+	undertest.partitionIDToState = m
 
 	undertest.Start()
 
@@ -153,8 +152,9 @@ func TestSaramaConsumerWrapper_start_Messages(t *testing.T) {
 
 	mp.AssertExpectations(t)
 	// Ensure that the partition consumer was updated in the map
-	assert.Equal(t, saramaPartitionConsumer.HighWaterMarkOffset(),
-		undertest.partitionIDToState[partition].partitionConsumer.HighWaterMarkOffset())
+	val, _ := undertest.partitionIDToState.Load(partition)
+	vv, _ := val.(*consumerState)
+	assert.Equal(t, saramaPartitionConsumer.HighWaterMarkOffset(), vv.partitionConsumer.HighWaterMarkOffset())
 	undertest.Close()
 
 	partitionTag := map[string]string{"partition": fmt.Sprint(partition)}
