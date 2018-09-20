@@ -86,8 +86,8 @@ func getConsumerState(k int32, m sync.Map) *consumerState {
 	if !ok {
 		return nil
 	}
-	vv, _ := v.(*consumerState)
-	return vv
+	cs, _ := v.(*consumerState)
+	return cs
 }
 
 // Close closes the Consumer and underlying sarama consumer
