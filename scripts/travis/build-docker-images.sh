@@ -28,3 +28,11 @@ do
   export REPO="jaegertracing/jaeger-${component}"
   bash ./scripts/travis/upload-to-docker.sh
 done
+
+
+export REPO="jaegertracing/jaeger-all-in-one"
+docker build -f cmd/all-in-one/Dockerfile -t $REPO:latest .
+bash ./scripts/travis/upload-to-docker.sh
+
+export REPO="jaegertracing/test-driver"
+docker build -f crossdock/Dockerfile -t $REPO:latest .
