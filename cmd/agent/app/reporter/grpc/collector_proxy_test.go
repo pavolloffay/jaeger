@@ -16,9 +16,11 @@ package grpc
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uber/jaeger-lib/metrics"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -27,7 +29,7 @@ import (
 )
 
 func TestProxyBuilder(t *testing.T) {
-	proxy := NewCollectorProxy(&Options{CollectorHostPort: []string{"localhost:0000"}}, zap.NewNop())
+	proxy := NewCollectorProxy(&Options{CollectorHostPort: []string{"localhost:0000"}}, metrics.NullFactory, zap.NewNop())
 	require.NotNil(t, proxy)
 	assert.NotNil(t, proxy.GetReporter())
 	assert.NotNil(t, proxy.GetManager())
@@ -45,7 +47,8 @@ func TestMultipleCollectors(t *testing.T) {
 	})
 	defer s2.Stop()
 
-	proxy := NewCollectorProxy(&Options{CollectorHostPort: []string{addr1.String(), addr2.String()}}, zap.NewNop())
+	mFactory := metrics.NewLocalFactory(time.Microsecond)
+	proxy := NewCollectorProxy(&Options{CollectorHostPort: []string{addr1.String(), addr2.String()}}, mFactory, zap.NewNop())
 	require.NotNil(t, proxy)
 	assert.NotNil(t, proxy.GetReporter())
 	assert.NotNil(t, proxy.GetManager())
@@ -61,5 +64,8 @@ func TestMultipleCollectors(t *testing.T) {
 			break
 		}
 	}
+	c, g := mFactory.Snapshot()
+	assert.True(t, len(g) > 0)
+	assert.True(t, len(c) > 0)
 	assert.Equal(t, true, bothServers)
 }

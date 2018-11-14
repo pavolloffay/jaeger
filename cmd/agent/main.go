@@ -122,7 +122,7 @@ func createCollectorProxy(
 	switch opts.ReporterType {
 	case reporter.GRPC:
 		grpclog.SetLoggerV2(grpclog.NewLoggerV2(ioutil.Discard, os.Stderr, os.Stderr))
-		return grpc.NewCollectorProxy(grpcRepOpts, logger), nil
+		return grpc.NewCollectorProxy(grpcRepOpts, mFactory, logger), nil
 	case reporter.TCHANNEL:
 		return tchannel.NewCollectorProxy(tchanRep, mFactory, logger)
 	default:

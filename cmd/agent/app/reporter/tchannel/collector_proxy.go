@@ -24,19 +24,19 @@ import (
 
 // ProxyBuilder holds objects communicating with collector
 type ProxyBuilder struct {
-	reporter *Reporter
+	reporter reporter.Reporter
 	manager  httpserver.ClientConfigManager
 }
 
 // NewCollectorProxy creates ProxyBuilder
 func NewCollectorProxy(builder *Builder, mFactory metrics.Factory, logger *zap.Logger) (*ProxyBuilder, error) {
 	b := &ProxyBuilder{}
-	r, err := builder.CreateReporter(mFactory, logger)
+	r, err := builder.CreateReporter(logger)
 	if err != nil {
 		return nil, err
 	}
-	b.reporter = r
-	b.manager = httpserver.NewCollectorProxy(b.reporter.CollectorServiceName(), b.reporter.Channel(), mFactory)
+	b.reporter = reporter.WrapWithMetrics(r, "tchannel-reporter", mFactory)
+	b.manager = httpserver.WrapWithMetrics(httpserver.NewCollectorProxy(r.CollectorServiceName(), r.Channel()), mFactory)
 	return b, nil
 }
 
