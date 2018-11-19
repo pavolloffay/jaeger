@@ -15,6 +15,7 @@
 package app
 
 import (
+	"fmt"
 	"go.uber.org/zap"
 
 	"github.com/jaegertracing/jaeger/proto-gen/api_v2"
@@ -36,6 +37,7 @@ func NewGRPCHandler(logger *zap.Logger, spanProcessor SpanProcessor) *GRPCHandle
 
 // PostSpans implements gRPC CollectorService.
 func (g *GRPCHandler) PostSpans(stream api_v2.CollectorService_PostSpansServer) error {
+	fmt.Println("Got stream of spans")
 	for {
 		// TODO no need to close? https://stackoverflow.com/questions/46933538/how-to-close-grpc-stream-for-server
 		req, err := stream.Recv()
