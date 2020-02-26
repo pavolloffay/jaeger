@@ -48,7 +48,6 @@ Jaeger UI can be accessed at http://localhost:16686.
 ```bash
 go get github.com/jaegertracing/jaeger
 cd $GOPATH/src/github.com/jaegertracing/jaeger
-make install
 cd examples/hotrod
 go run ./main.go all
 ```

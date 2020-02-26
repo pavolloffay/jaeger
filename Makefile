@@ -176,16 +176,6 @@ go-lint:
 		>> $(LINT_LOG) || true;
 	@[ ! -s "$(LINT_LOG)" ] || (echo "Lint Failures" | cat - $(LINT_LOG) && false)
 
-.PHONY: install-glide
-install-glide:
-	@echo "WARNING: Jaeger has migrated to dep, install-glide is now deprecated" 1>&2
-	$(MAKE) install
-
-.PHONY: install
-install:
-	@which dep > /dev/null || curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-	dep ensure -vendor-only
-
 .PHONE: elasticsearch-mappings
 elasticsearch-mappings:
 	esc -pkg mappings -o plugin/storage/es/mappings/gen_assets.go -ignore assets -prefix plugin/storage/es/mappings plugin/storage/es/mappings
@@ -366,7 +356,7 @@ install-tools:
 	go install ./vendor/honnef.co/go/tools/cmd/staticcheck/
 
 .PHONY: install-ci
-install-ci: install install-tools
+install-ci: install-tools
 
 .PHONY: test-ci
 test-ci: build-examples lint cover
