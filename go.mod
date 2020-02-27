@@ -6,13 +6,9 @@ require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/DataDog/zstd v1.4.4 // indirect
 	github.com/Shopify/sarama v1.22.2-0.20190604114437-cd910a683f9f
-	github.com/VividCortex/gohistogram v1.0.0 // indirect
-	github.com/apache/thrift v0.0.0-20151001171628-53dd39833a08
+	github.com/apache/thrift v0.0.0-20161221203622-b2a4d4ae21c7
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
-	github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b // indirect
 	github.com/bsm/sarama-cluster v2.1.13+incompatible
-	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
-	github.com/cpuguy83/go-md2man v1.0.10 // indirect
 	github.com/crossdock/crossdock-go v0.0.0-20160816171116-049aabb0122b
 	github.com/dgraph-io/badger v1.5.3
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
@@ -29,8 +25,8 @@ require (
 	github.com/go-openapi/swag v0.19.7
 	github.com/go-openapi/validate v0.19.6
 	github.com/gocql/gocql v0.0.0-20200226121155-e5c8c1f505c5
-	github.com/gogo/googleapis v1.0.1-0.20180501115203-b23578765ee5
-	github.com/gogo/protobuf v1.2.1
+	github.com/gogo/googleapis v1.3.0
+	github.com/gogo/protobuf v1.3.0
 	github.com/golang/protobuf v1.3.3
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
@@ -44,30 +40,25 @@ require (
 	github.com/kr/pretty v0.2.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.1 // indirect
-	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/olivere/elastic v6.2.27+incompatible
-	github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c // indirect
-	github.com/onsi/gomega v0.0.0-20170829124025-dcabb60a477c // indirect
+	github.com/open-telemetry/opentelemetry-collector v0.2.7-0.20200226144913-d17176da0562
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prashantv/protectmem v0.0.0-20171002184600-e20412882b3a // indirect
 	github.com/prometheus/client_golang v1.1.0
 	github.com/prometheus/common v0.9.1 // indirect
 	github.com/prometheus/procfs v0.0.10 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/soheilhy/cmux v0.1.4
-	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.5
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
-	github.com/streadway/quantile v0.0.0-20150917103942-b0c588724d25 // indirect
 	github.com/stretchr/testify v1.5.0
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
@@ -89,3 +80,6 @@ require (
 	gopkg.in/jcmturner/gokrb5.v7 v7.5.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 )
+
+// taken from opentelemetry-collector. It imports k8s client
+replace k8s.io/client-go => k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
