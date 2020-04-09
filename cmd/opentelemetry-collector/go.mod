@@ -16,5 +16,6 @@ require (
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.0
 	github.com/uber/jaeger-lib v2.2.0+incompatible
+	go.opentelemetry.io/otel v0.4.2
 	go.uber.org/zap v1.13.0
 )
