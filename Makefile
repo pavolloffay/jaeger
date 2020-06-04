@@ -1,6 +1,6 @@
 JAEGER_IMPORT_PATH=github.com/jaegertracing/jaeger
 STORAGE_PKGS = ./plugin/storage/integration/...
-OTEL_COLLECTOR_DIR = ./cmd/opentelemetry-collector
+OTEL_COLLECTOR_DIR = ./cmd/opentelemetry
 
 # all .go files that are not auto-generated and should be auto-formatted and linted.
 ALL_SRC := $(shell find . -name '*.go' \
