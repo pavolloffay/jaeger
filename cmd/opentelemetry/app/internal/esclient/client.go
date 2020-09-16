@@ -64,17 +64,10 @@ type BulkResponseItem struct {
 
 // BulkIndexResponse is a bulk response for index action
 type BulkIndexResponse struct {
-	ID     string `json:"_id"`
-	Result string `json:"result"`
-	Status int    `json:"status"`
-	Error  struct {
-		Type   string `json:"type"`
-		Reason string `json:"reason"`
-		Cause  struct {
-			Type   string `json:"type"`
-			Reason string `json:"reason"`
-		} `json:"caused_by"`
-	} `json:"error"`
+	ID     string               `json:"_id"`
+	Result string               `json:"result"`
+	Status int                  `json:"status"`
+	Error  *SearchResponseError `json:"error,omitempty"`
 }
 
 // SearchBody defines search request.

@@ -162,10 +162,7 @@ func (w *esSpanWriter) handleResponse(ctx context.Context, blk *esclient.BulkRes
 			numErrors++
 			w.logger.Error("Part of the bulk request failed",
 				zap.String("result", d.Index.Result),
-				zap.String("error.reason", d.Index.Error.Reason),
-				zap.String("error.type", d.Index.Error.Type),
-				zap.String("error.cause.type", d.Index.Error.Cause.Type),
-				zap.String("error.cause.reason", d.Index.Error.Cause.Reason))
+				zap.String("error", d.Index.Error.String()))
 			// TODO return an error or a struct that indicates which spans should be retried
 			// https://github.com/open-telemetry/opentelemetry-collector/issues/990
 			if !bulkOp.isService {
