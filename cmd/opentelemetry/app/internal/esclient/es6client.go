@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	bulkES6MetaFormat = `{"index":{"_indexa":"%s","_type":"%s"}}` + "\n"
+	bulkES6MetaFormat = `{"index":{"_index":"%s","_type":"%s"}}` + "\n"
 )
 
 type elasticsearch6Client struct {

@@ -127,9 +127,9 @@ func (w *esSpanWriter) writeSpans(ctx context.Context, spans []*dbmodel.Span) (i
 			dropped++
 			continue
 		}
-		indexName := w.spanIndexName.IndexName(model.EpochMicrosecondsAsTime(span.StartTime))
+		//indexName := w.spanIndexName.IndexName(model.EpochMicrosecondsAsTime(span.StartTime))
 		bulkOperations = append(bulkOperations, bulkItem{span: span, isService: false})
-		w.client.AddDataToBulkBuffer(buffer, data, indexName, spanTypeName)
+		w.client.AddDataToBulkBuffer(buffer, data, "doesno_exist", spanTypeName)
 
 		if !w.isArchive {
 			storeService, err := w.writeService(span, buffer)
@@ -144,6 +144,7 @@ func (w *esSpanWriter) writeSpans(ctx context.Context, spans []*dbmodel.Span) (i
 	}
 	res, err := w.client.Bulk(ctx, bytes.NewReader(buffer.Bytes()))
 	if err != nil {
+		fmt.Println("got errror")
 		errs = append(errs, err)
 		return len(spans), componenterror.CombineErrors(errs)
 	}
