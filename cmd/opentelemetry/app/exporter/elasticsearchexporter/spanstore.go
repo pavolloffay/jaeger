@@ -127,9 +127,9 @@ func (w *esSpanWriter) writeSpans(ctx context.Context, spans []*dbmodel.Span) (i
 			dropped++
 			continue
 		}
-		//indexName := w.spanIndexName.IndexName(model.EpochMicrosecondsAsTime(span.StartTime))
+		indexName := w.spanIndexName.IndexName(model.EpochMicrosecondsAsTime(span.StartTime))
 		bulkOperations = append(bulkOperations, bulkItem{span: span, isService: false})
-		w.client.AddDataToBulkBuffer(buffer, data, "doesno_exist", spanTypeName)
+		w.client.AddDataToBulkBuffer(buffer, data, indexName, spanTypeName)
 
 		if !w.isArchive {
 			storeService, err := w.writeService(span, buffer)
@@ -144,7 +144,6 @@ func (w *esSpanWriter) writeSpans(ctx context.Context, spans []*dbmodel.Span) (i
 	}
 	res, err := w.client.Bulk(ctx, bytes.NewReader(buffer.Bytes()))
 	if err != nil {
-		fmt.Println("got errror")
 		errs = append(errs, err)
 		return len(spans), componenterror.CombineErrors(errs)
 	}
@@ -161,9 +160,13 @@ func (w *esSpanWriter) handleResponse(ctx context.Context, blk *esclient.BulkRes
 		bulkOp := operationToSpan[i]
 		if d.Index.Status > 201 {
 			numErrors++
+			var err string
+			if d.Index.Error != nil {
+				err = d.Index.Error.String()
+			}
 			w.logger.Error("Part of the bulk request failed",
 				zap.String("result", d.Index.Result),
-				zap.String("error", d.Index.Error.String()))
+				zap.String("error", err))
 			// TODO return an error or a struct that indicates which spans should be retried
 			// https://github.com/open-telemetry/opentelemetry-collector/issues/990
 			if !bulkOp.isService {

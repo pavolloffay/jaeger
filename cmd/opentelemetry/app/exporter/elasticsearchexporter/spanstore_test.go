@@ -35,9 +35,9 @@ func TestMetrics(t *testing.T) {
 	response := &esclient.BulkResponse{}
 	response.Items = []esclient.BulkResponseItem{
 		{Index: esclient.BulkIndexResponse{Status: 200}},
-		{Index: esclient.BulkIndexResponse{Status: 500}},
+		{Index: esclient.BulkIndexResponse{Status: 500, Error: &esclient.SearchResponseError{}}},
 		{Index: esclient.BulkIndexResponse{Status: 200}},
-		{Index: esclient.BulkIndexResponse{Status: 500}},
+		{Index: esclient.BulkIndexResponse{Status: 500, Error: &esclient.SearchResponseError{}}},
 	}
 	blkItms := []bulkItem{
 		{isService: true, span: &dbmodel.Span{}},
