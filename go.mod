@@ -60,10 +60,12 @@ require (
 	go.mongodb.org/mongo-driver v1.5.2 // indirect
 	go.uber.org/atomic v1.8.0
 	go.uber.org/automaxprocs v1.4.0
+	go.uber.org/goleak v1.1.10 // indirect
 	go.uber.org/zap v1.18.1
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
+	golang.org/x/tools v0.1.4 // indirect
 	google.golang.org/grpc v1.39.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0

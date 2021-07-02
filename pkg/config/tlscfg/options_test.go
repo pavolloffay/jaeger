@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"go.uber.org/zap"
 )
 
@@ -156,4 +157,18 @@ func TestOptionsToConfig(t *testing.T) {
 			assert.NoError(t, test.options.Close())
 		})
 	}
+}
+
+func TestGoLeak(t *testing.T) {
+	defer goleak.VerifyNone(t)
+	o := &Options{
+		Enabled:        true,
+		CAPath:   testCertKeyLocation + "/example-CA-cert.pem",
+		CertPath: testCertKeyLocation + "/example-client-cert.pem",
+	}
+	cfg, err := o.Config(zap.NewNop())
+	require.NoError(t, err)
+	assert.NotNil(t, cfg)
+
+	o.Close()
 }
